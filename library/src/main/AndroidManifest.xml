@@ -1,2 +1,1 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="ua.com.crooge.light.threads"/>
+<manifest package="ua.com.crooge.light.threads"/>

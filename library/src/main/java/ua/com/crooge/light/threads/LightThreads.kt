@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadFactory
@@ -90,7 +91,7 @@ fun schedule(delay: Long, unit: TimeUnit, function: () -> Unit) = schedule(delay
  * @param task  command to run
  * @return future for task
  */
-fun schedule(delay: Long, unit: TimeUnit, task: Runnable) = SCHEDULED_EXECUTOR.schedule(task, delay, unit)
+fun schedule(delay: Long, unit: TimeUnit, task: Runnable): ScheduledFuture<*> = SCHEDULED_EXECUTOR.schedule(task, delay, unit)
 
 /**
  * Schedule task to run in the background periodically.
@@ -113,7 +114,7 @@ fun schedule(delay: Long, period: Long, unit: TimeUnit, function: () -> Unit) =
  * @param task   command to run
  * @return future for task
  */
-fun schedule(delay: Long, period: Long, unit: TimeUnit, task: Runnable): Future<*> =
+fun schedule(delay: Long, period: Long, unit: TimeUnit, task: Runnable): ScheduledFuture<*> =
     SCHEDULED_EXECUTOR.scheduleAtFixedRate(task, delay, period, unit)
 
 private fun getMainHandler() = MainThreadHandlerHolder.INSTANCE
@@ -229,7 +230,7 @@ private abstract class CustomScheduledExecutor internal constructor(
 private class DefaultExecutor internal constructor(corePoolSize: Int, threadFactory: DefaultThreadFactory) :
     CustomExecutor(corePoolSize, corePoolSize, 0L, TimeUnit.SECONDS, LinkedBlockingQueue<Runnable>(), threadFactory) {
 
-    override fun afterExecute(task: Runnable, t: Throwable) {
+    override fun afterExecute(task: Runnable, t: Throwable?) {
         super.afterExecute(task, t)
         EXCEPTION_HANDLER.afterExecute(task, t)
     }
@@ -245,7 +246,7 @@ private class DefaultCachedExecutor internal constructor(threadFactory: DefaultT
         threadFactory
     ) {
 
-    override fun afterExecute(task: Runnable, t: Throwable) {
+    override fun afterExecute(task: Runnable, t: Throwable?) {
         super.afterExecute(task, t)
         EXCEPTION_HANDLER.afterExecute(task, t)
     }
@@ -254,7 +255,7 @@ private class DefaultCachedExecutor internal constructor(threadFactory: DefaultT
 private class DefaultScheduledExecutor internal constructor(corePoolSize: Int, threadFactory: DefaultThreadFactory) :
     CustomScheduledExecutor(corePoolSize, threadFactory) {
 
-    override fun afterExecute(task: Runnable, t: Throwable) {
+    override fun afterExecute(task: Runnable, t: Throwable?) {
         super.afterExecute(task, t)
         EXCEPTION_HANDLER.afterExecute(task, t)
     }
@@ -288,7 +289,6 @@ private class DefaultThreadFactory internal constructor(poolName: String) : Thre
     }
 
     companion object {
-
         private val poolNumber = AtomicInteger(1)
     }
 }
@@ -299,9 +299,8 @@ private class ExceptionHandler : Thread.UncaughtExceptionHandler {
         var t = ex
         if (t == null && task is Future<*>) {
             try {
-                val future = task as Future<*>
-                if (future.isDone && !future.isCancelled) {
-                    future.get()
+                if (task.isDone && !task.isCancelled) {
+                    task.get()
                 }
             } catch (ce: CancellationException) {
                 t = ce
@@ -312,8 +311,8 @@ private class ExceptionHandler : Thread.UncaughtExceptionHandler {
             }
         }
 
-        if (t != null) {
-            uncaughtException(Thread.currentThread(), t)
+        t?.let {
+            uncaughtException(Thread.currentThread(), it)
         }
     }
 
