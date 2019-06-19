@@ -61,6 +61,7 @@ fun runInBackground(immediately: Boolean = true, task: Runnable): Future<*>? {
  *
  * @param delayMillis delay in milliseconds
  * @param function        command to run
+ * @return future for task
  */
 fun runInBackground(delayMillis: Long, function: () -> Unit) = runInBackground(delayMillis, Runnable { function() })
 
@@ -69,6 +70,7 @@ fun runInBackground(delayMillis: Long, function: () -> Unit) = runInBackground(d
  *
  * @param delayMillis delay in milliseconds
  * @param task        command to run
+ * @return future for task
  */
 fun runInBackground(delayMillis: Long, task: Runnable): Future<*> =
     SCHEDULED_EXECUTOR.schedule(task, delayMillis, TimeUnit.MILLISECONDS)
@@ -79,7 +81,7 @@ fun runInBackground(delayMillis: Long, task: Runnable): Future<*> =
  * @param delay delay before executing task
  * @param unit  time unit
  * @param function  command to run
- * @return future for task
+ * @return scheduled future for task
  */
 fun schedule(delay: Long, unit: TimeUnit, function: () -> Unit) = schedule(delay, unit, Runnable { function() })
 
@@ -89,9 +91,10 @@ fun schedule(delay: Long, unit: TimeUnit, function: () -> Unit) = schedule(delay
  * @param delay delay before executing task
  * @param unit  time unit
  * @param task  command to run
- * @return future for task
+ * @return scheduled future for task
  */
-fun schedule(delay: Long, unit: TimeUnit, task: Runnable): ScheduledFuture<*> = SCHEDULED_EXECUTOR.schedule(task, delay, unit)
+fun schedule(delay: Long, unit: TimeUnit, task: Runnable): ScheduledFuture<*> =
+    SCHEDULED_EXECUTOR.schedule(task, delay, unit)
 
 /**
  * Schedule task to run in the background periodically.
@@ -100,7 +103,7 @@ fun schedule(delay: Long, unit: TimeUnit, task: Runnable): ScheduledFuture<*> = 
  * @param period period between successive executions
  * @param unit   time unit
  * @param function   command to run
- * @return future for task
+ * @return scheduled future for task
  */
 fun schedule(delay: Long, period: Long, unit: TimeUnit, function: () -> Unit) =
     schedule(delay, period, unit, Runnable { function() })
@@ -112,7 +115,7 @@ fun schedule(delay: Long, period: Long, unit: TimeUnit, function: () -> Unit) =
  * @param period period between successive executions
  * @param unit   time unit
  * @param task   command to run
- * @return future for task
+ * @return scheduled future for task
  */
 fun schedule(delay: Long, period: Long, unit: TimeUnit, task: Runnable): ScheduledFuture<*> =
     SCHEDULED_EXECUTOR.scheduleAtFixedRate(task, delay, period, unit)
